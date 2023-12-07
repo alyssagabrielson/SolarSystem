@@ -161,10 +161,12 @@ var xAxis = 0;
 var yAxis = 1;
 var zAxis = 2;
 var axis = 1; // start rotating on y axis first
-var theta =vec3(0, 0, 0);
+var theta = vec3(0, 0, 0);
 var speed = 0.25; // speed of rotation
+var scaleFactor = 1.0; // Initial scale factor
 
 var flag = true; // controls toggle of rotation
+var update = false;
 
 var points = [];
 var normals = [];
@@ -172,9 +174,10 @@ var colors = [];
 var texCoord = [];
 
 // planet objects
-var mercury, venus, earth, mars, jupiter, saturn, rings, uranus, neptune, skyBox;
+var sun, mercury, venus, earth, mars, jupiter, saturn, rings, uranus, neptune, skyBox;
 // planet vertices count
 var ncube, nsun, nmercury, nvenus, nearth, nmars, njupiter, nsaturn, nuranus, nneptune, nskybox, nrings;
+var skyboxScale = 2.2;
 // texture of each planet
 var suntex, mercurytex, venustex, earthtex, marstex, jupitertex, saturntex, uranustex, neptunetex, skyboxtex, ringstex;
 
@@ -191,6 +194,7 @@ function configureTexture( image ) {
     return texture;
 }
 
+// Concatenate vertices, normals, colors, and texture coordinates to respective arrays
 function createPlanet(planet) {
     points = points.concat(planet.TriangleVertices);
     normals = normals.concat(planet.TriangleNormals);
@@ -198,16 +202,18 @@ function createPlanet(planet) {
     texCoord = texCoord.concat(planet.TextureCoordinates);
 }
 
+// Set up light properties
 function light() {
     var data = {};
-    data.lightPosition = vec4(0.0, 0.0, 0.0, 1.0 );;
-    data.lightAmbient = vec4(0.5, 0.5, 0.5, 1.0 );
-    data.lightDiffuse = vec4( 2.0, 2.0, 2.0, 1.0 );
-    data.lightSpecular = vec4(2.0, 2.0, 2.0, 1.0 );
+    data.lightPosition = vec4(0.0, 0.0, 0.0, 1.0 ); // position light at sun
+    data.lightAmbient = vec4(0.1, 0.1, 0.1, 1.0 );
+    data.lightDiffuse = vec4( 0.1, 0.1, 0.1, 1.0 );
+    data.lightSpecular = vec4(0.1, 0.1, 0.1, 1.0 );
     data.lightShineness = 10;
     return data;
   }
 
+  // Set up material properties
   function material() {
     var data  = {};
     data.materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
@@ -217,78 +223,66 @@ function light() {
     return data;
   }
 
-window.onload = function init() {
-    canvas = document.getElementById( "gl-canvas" );
-
-    gl = canvas.getContext('webgl2');
-    if (!gl) { alert( "WebGL 2.0 isn't available" ); }
-
-    gl.viewport( 0, 0, canvas.width, canvas.height );
-    gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
-    gl.enable(gl.DEPTH_TEST);
-
-// declare planets, relative sizes and distance from sun
-
-    var sun = sphere(5);
-    sun.scale(0.18, 0.18, 0.18);
+  // Create each planet
+  function initPlanets() { 
+    sun = sphere(5);
+    sun.scale(0.18 * scaleFactor, 0.18 * scaleFactor, 0.18 * scaleFactor);
     sun.translate(0.0, 0.0, 0.0);
 
     mercury = sphere(5);
-    mercury.scale(0.02, 0.02, 0.02);
+    mercury.scale(0.02 * scaleFactor, 0.02 * scaleFactor, 0.02 * scaleFactor);
     mercury.translate(-0.2, -0.0, 0.2);
 
     venus = sphere(5);
-    venus.scale(0.03, 0.03, 0.03);
+    venus.scale(0.03 * scaleFactor, 0.03 * scaleFactor, 0.03 * scaleFactor);
     venus.translate(-0.27, 0.0, 0.27);
     venus.rotate(-90.0, [ 0, 1, 0]);
 
     earth = sphere(5);
-    earth.scale(0.035, 0.035, 0.035);
+    earth.scale(0.035 * scaleFactor, 0.035 * scaleFactor, 0.035 * scaleFactor);
     earth.translate(-0.35, 0.0, 0.35);
     earth.rotate(60.0, [ 0, 1, 0]);
 
     mars = sphere(5);
-    mars.scale(0.02, 0.02, 0.02);
+    mars.scale(0.02 * scaleFactor, 0.02 * scaleFactor, 0.02 * scaleFactor);
     mars.translate(-0.43, 0.0, 0.43);
     mars.rotate(15.0, [ 0, 1, 0]);
 
     jupiter = sphere(5);
-    jupiter.scale(0.08, 0.08, 0.08);
+    jupiter.scale(0.08 * scaleFactor, 0.08 * scaleFactor, 0.08 * scaleFactor);
     jupiter.translate(-0.54, 0.0, 0.54);
     jupiter.rotate(180.0, [ 0, 1, 0]);
 
     saturn = sphere(5);
-    saturn.scale(0.07, 0.07, 0.07);
+    saturn.scale(0.07 * scaleFactor, 0.07 * scaleFactor, 0.07 * scaleFactor);
     saturn.translate(-0.69, 0.0, 0.69);
     saturn.rotate(-120.0, [ 0, 1, 0]);
 
     rings = sphere(5);
-    rings.scale(0.1, 0.01, 0.1);
+    rings.scale(0.1 * scaleFactor, 0.01 * scaleFactor, 0.1 * scaleFactor);
     rings.rotate(45.0, [ 1, 1, 1]);
     rings.translate(-0.69, 0.0, 0.69);
     rings.rotate(-120.0, [ 0, 1, 0]);
 
     uranus = sphere(5);
-    uranus.scale(0.05, 0.05, 0.05);
+    uranus.scale(0.05 * scaleFactor, 0.05 * scaleFactor, 0.05 * scaleFactor);
     uranus.translate(-0.8, 0.0, 0.8);
     uranus.rotate(-245.0, [ 0, 1, 0]);
 
     neptune = sphere(5);
-    neptune.scale(0.048, 0.048, 0.048);
+    neptune.scale(0.048 * scaleFactor, 0.048 * scaleFactor, 0.048 * scaleFactor);
     neptune.translate(-0.9, 0.0, 0.9);
     neptune.rotate(295.0, [ 0, 1, 0]);
 
     skyBox = sphere(5);
-    skyBox.scale(2, 2, 2);
+    skyBox.scale(skyboxScale, skyboxScale, skyboxScale);
     skyBox.translate(0.0, 0.0, 0.0);
 
-// light, material, texture
-
-    var myMaterial = material();
-    var myLight = light();
-
 // put object data in arrays that will be sent to shaders
-
+    points = [];
+    normals = [];
+    colors = [];
+    texCoord = [];
     points = sun.TriangleVertices;
     normals = sun.TriangleNormals;
     colors = sun.TriangleVertexColors;
@@ -304,6 +298,60 @@ window.onload = function init() {
     createPlanet(neptune);
     createPlanet(rings);
     createPlanet(skyBox);
+  }
+
+  // initialize buffers with data
+  function initBuffers() {
+    var cBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW );
+
+    var nBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW );
+
+    var normalLoc = gl.getAttribLocation( program1, "aNormal" );
+    gl.vertexAttribPointer( normalLoc, 3, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( normalLoc );
+
+    var vBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW );
+
+    var positionLoc = gl.getAttribLocation(program1, "aPosition");
+    gl.vertexAttribPointer(positionLoc, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(positionLoc);
+
+    var tBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer);
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoord), gl.STATIC_DRAW );
+
+    var texCoordLoc = gl.getAttribLocation( program1, "aTexCoord");
+    gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(texCoordLoc);
+  }
+
+window.onload = function init() {
+    canvas = document.getElementById( "gl-canvas" );
+
+    gl = canvas.getContext('webgl2');
+    if (!gl) { alert( "WebGL 2.0 isn't available" ); }
+
+    // look up the text canvas and make a 2D context for canvas
+    // var textCanvas = document.querySelector("#text");
+    //var ctx = textCanvas.getContext("2d");
+
+    gl.viewport( 0, 0, canvas.width, canvas.height );
+    gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
+    gl.enable(gl.DEPTH_TEST);
+
+// declare planets, relative sizes and distance from sun
+    initPlanets();
+
+// light, material, texture
+
+    var myMaterial = material();
+    var myLight = light();
 
 // object sizes (number of vertices)
 
@@ -323,59 +371,7 @@ window.onload = function init() {
     //  Load shaders and initialize attribute buffers
     //
     program1 = initShaders( gl, "vertex-shader", "fragment-shader" );
-    program2 = initShaders( gl, "vertex-shader2", "fragment-shader2" );
-    program3 = initShaders( gl, "vertex-shader3", "fragment-shader3" );
-
-// program1: render with lighting
-//    need position and normal attributes sent to shaders
-// program2: render with vertex colors
-//    need position and color attributes sent to shaders
-// program3: render with texture and vertex colors
-//    need position, color and texture coordinate attributes sent to shaders
-
-    var cBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW );
-
-    var colorLoc = gl.getAttribLocation( program2, "aColor" );
-    gl.vertexAttribPointer( colorLoc, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray( colorLoc );
-
-    var color2Loc = gl.getAttribLocation( program3, "aColor" );
-    gl.vertexAttribPointer( color2Loc, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray( color2Loc );
-
-    var nBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW );
-
-    var normalLoc = gl.getAttribLocation( program1, "aNormal" );
-    gl.vertexAttribPointer( normalLoc, 3, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( normalLoc );
-
-    var vBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW );
-
-    var positionLoc = gl.getAttribLocation(program1, "aPosition");
-    gl.vertexAttribPointer(positionLoc, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(positionLoc);
-
-    var position2Loc = gl.getAttribLocation(program2, "aPosition");
-    gl.vertexAttribPointer(position2Loc, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(position2Loc);
-
-    var position3Loc = gl.getAttribLocation(program3, "aPosition");
-    gl.vertexAttribPointer(position3Loc, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(position3Loc);
-
-    var tBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer);
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoord), gl.STATIC_DRAW );
-
-    var texCoordLoc = gl.getAttribLocation( program3, "aTexCoord");
-    gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(texCoordLoc);
+    initBuffers();
 
     var img1 = document.getElementById("Img1");
     suntex=configureTexture(img1);
@@ -404,7 +400,7 @@ window.onload = function init() {
 
     viewerPos = vec3(0.0, 0.0, -20.0 );
 
-    projectionMatrix = ortho(-1.35, 1.35, -1.35, 1.35, -1.3, 2);
+    projectionMatrix = ortho(-1.35, 1.35, -1.35, 1.35, -1.3, skyboxScale);
 
 // products of material and light properties
 
@@ -420,19 +416,20 @@ window.onload = function init() {
     document.getElementById("ButtonT").onclick = function(){flag = !flag;};
     document.getElementById("ButtonSlow").onclick = function(){if(speed>0.2) speed -= 0.1};
     document.getElementById("ButtonFast").onclick = function(){if(speed<2.0) speed += 0.1};
+    document.getElementById("ButtonScaleUp").onclick = function () {
+        if(scaleFactor < 1.4) scaleFactor += 0.1; // Increase scale by 0.1
+        initPlanets();
+        initBuffers();
+        console.log(scaleFactor);
+    };
+    document.getElementById("ButtonScaleDown").onclick = function () {
+        if (scaleFactor > 0.2) scaleFactor -= 0.1; // Decrease scale by 0.1
+        initPlanets();
+        initBuffers();
+        console.log(scaleFactor);
+    };
 
 // uniforms for each program object
-
-    gl.useProgram(program2);
-
-    gl.uniformMatrix4fv( gl.getUniformLocation(program2, "projectionMatrix"),
-       false, flatten(projectionMatrix));
-
-    gl.useProgram(program3);
-
-    gl.uniformMatrix4fv( gl.getUniformLocation(program3, "projectionMatrix"),
-          false, flatten(projectionMatrix));
-
 
     gl.useProgram(program1);
 
@@ -467,32 +464,15 @@ var render = function(){
     modelViewMatrix = mult(modelViewMatrix, rotate(theta[yAxis], vec3(0, 1, 0) ));
     modelViewMatrix = mult(modelViewMatrix, rotate(theta[zAxis], vec3(0, 0, 1) ));
 
+    // Apply scaling to the modelViewMatrix
+    // Unused; don't want skybox to be affected
+    // modelViewMatrix = mult(modelViewMatrix, scale(scaleFactor, scaleFactor, scaleFactor));
+
 // by commenting and uncommenting gl.drawArrays we can choose which shaders to use for each object
 
     gl.useProgram(program1);
     gl.uniformMatrix4fv( gl.getUniformLocation(program1,
             "modelViewMatrix"), false, flatten(modelViewMatrix) );
-
-    // gl.drawArrays( gl.TRIANGLES, 0, nsun);
-    // gl.drawArrays( gl.TRIANGLES, nsun, nmercury );
-    // gl.drawArrays( gl.TRIANGLES, nsun + nmercury, nskybox );
-    // gl.drawArrays( gl.TRIANGLES, nsun + nmercury + nsphere, nskybox );
-
-
-    // gl.useProgram(program2);
-    // gl.uniformMatrix4fv( gl.getUniformLocation(program2,
-    //         "modelViewMatrix"), false, flatten(modelViewMatrix) );
-
-    // gl.drawArrays( gl.TRIANGLES, 0, nsun);
-    // gl.drawArrays( gl.TRIANGLES, nsun, ncube );
-    // gl.drawArrays( gl.TRIANGLES, nsun + ncube, nsphere );
-    // gl.drawArrays( gl.TRIANGLES, nsun + ncube + nsphere, nskybox );
-
-
-
-    // gl.useProgram(program3);
-    // gl.uniformMatrix4fv( gl.getUniformLocation(program3,
-    //         "modelViewMatrix"), false, flatten(modelViewMatrix) );
 
     gl.bindTexture(gl.TEXTURE_2D, suntex)
     gl.drawArrays( gl.TRIANGLES, 0, nsun);
