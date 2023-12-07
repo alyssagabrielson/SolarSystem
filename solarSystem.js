@@ -1,8 +1,4 @@
 "use strict";
-#include <glm/vec3.hpp> // glm::vec3
-#include <glm/vec4.hpp> // glm::vec4
-#include <glm/mat4x4.hpp> // glm::mat4
-#include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 // Sphere class
 function sphere(numSubdivisions) {
 
@@ -165,7 +161,7 @@ var xAxis = 0;
 var yAxis = 1;
 var zAxis = 2;
 var axis = 1; // start rotating on y axis first
-var theta =glm::vec3(0, 0, 0);
+var theta = vec3(0, 0, 0);
 var speed = 0.25; // speed of rotation
 var scaleFactor = 1.0; // Initial scale factor
 
