@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <script id="vertex-shader" type="x-shader/x-vertex">
 #version 300 es
 
@@ -179,23 +178,30 @@ main()
 <script type="text/javascript" src="solarSystem.js"></script>
 
 <body>
-<canvas id="gl-canvas" width="1024" height="1024">
+    <div style="position: relative;">
+        <canvas id="gl-canvas" width="1024" height="1024" style="position: absolute; z-index: 1;"></canvas>
+        <canvas id="text" width="1024" height="1024" style="position: absolute; z-index: 2;"></canvas>
+    </div>
 Oops ... your browser doesn't support the HTML5 canvas element
 </canvas>
 
 <br/>
 
-<button id= "ButtonX">Rotate X</button>
-<button id= "ButtonY">Rotate Y</button>
-<button id= "ButtonZ">Rotate Z</button>
-<button id = "ButtonT">Toggle Solar System Rotation</button>
-
-<div style="margin-top: 20px;">
-<button id = "ButtonSlow">Slow Down Orbit</button>
-<button id = "ButtonFast">Speed Up Orbit</button>
-<button id = "ButtonScaleUp">Increase Scale</button>
-<button id = "ButtonScaleDown">Decrease Scale</button>
-</div>
+    <!-- Buttons -->
+    <!-- Buttons -->
+    <div id="buttons-container" style="position: absolute; top: 20px; left: 20px; z-index: 3;">
+        <button id="ButtonX">Rotate X</button>
+        <button id="ButtonY">Rotate Y</button>
+        <button id="ButtonZ">Rotate Z</button>
+        <button id="ButtonT">Toggle Solar System Rotation</button>
+        <button id="ButtonTLabels">Toggle Labels</button>
+        <div style="margin-top: 20px;">
+            <button id = "ButtonSlow">Slow Down Orbit</button>
+            <button id = "ButtonFast">Speed Up Orbit</button>
+            <button id = "ButtonScaleUp">Increase Scale</button>
+            <button id = "ButtonScaleDown">Decrease Scale</button>
+            </div>
+    </div>
 
 <img id = "Img1" src = "sun.jpg" hidden />
 <img id = "Img2" src = "mercury.jpg" hidden />
