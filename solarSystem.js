@@ -1,5 +1,6 @@
 "use strict";
 
+// Sphere class
 function sphere(numSubdivisions) {
 
     var subdivisions = 3;
@@ -163,17 +164,19 @@ var axis = 1; // start rotating on y axis first
 var theta =vec3(0, 0, 0);
 var speed = 0.25; // speed of rotation
 
-var flag = true;
+var flag = true; // controls toggle of rotation
 
 var points = [];
 var normals = [];
 var colors = [];
 var texCoord = [];
 
+// planet objects
 var mercury, venus, earth, mars, jupiter, saturn, rings, uranus, neptune, skyBox;
+// planet vertices count
 var ncube, nsun, nmercury, nvenus, nearth, nmars, njupiter, nsaturn, nuranus, nneptune, nskybox, nrings;
+// texture of each planet
 var suntex, mercurytex, venustex, earthtex, marstex, jupitertex, saturntex, uranustex, neptunetex, skyboxtex, ringstex;
-var currentPlanet, planets;
 
 function configureTexture( image ) {
     var texture = gl.createTexture();
@@ -195,13 +198,22 @@ function createPlanet(planet) {
     texCoord = texCoord.concat(planet.TextureCoordinates);
 }
 
-function light0() {
+function light() {
     var data = {};
     data.lightPosition = vec4(0.0, 0.0, 0.0, 1.0 );;
     data.lightAmbient = vec4(0.5, 0.5, 0.5, 1.0 );
     data.lightDiffuse = vec4( 2.0, 2.0, 2.0, 1.0 );
     data.lightSpecular = vec4(2.0, 2.0, 2.0, 1.0 );
     data.lightShineness = 10;
+    return data;
+  }
+
+  function material() {
+    var data  = {};
+    data.materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
+    data.materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0);
+    data.materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 );
+    data.materialShininess = 100.0;
     return data;
   }
 
@@ -272,8 +284,8 @@ window.onload = function init() {
 
 // light, material, texture
 
-    var myMaterial = goldMaterial();
-    var myLight = light0();
+    var myMaterial = material();
+    var myLight = light();
 
 // put object data in arrays that will be sent to shaders
 
