@@ -152,6 +152,7 @@ function sphere(numSubdivisions) {
 
 var canvas;
 var gl;
+var ctx; 
 
 var modelViewMatrix, projectionMatrix;
 var viewerPos;
@@ -166,7 +167,7 @@ var speed = 0.25; // speed of rotation
 var scaleFactor = 1.0; // Initial scale factor
 
 var flag = true; // controls toggle of rotation
-var update = false;
+var flagLabels = true;
 
 var points = [];
 var normals = [];
@@ -223,6 +224,16 @@ function light() {
     return data;
   }
 
+  const planetPositions =  [
+    vec4(-0.18, -0.0, 0.2, 1.0), // mercury's position
+    vec4(-0.289, 0.0, 0.53, 1.0), // venus's position
+    vec4(0.16, 0.0, 0.48, 1.0), // Earth's position
+    vec4(-0.24, 0.0, -0.28, 1.0), // mars
+    vec4(0.62, 0.0, -0.54, 1.0), // jupiter
+    vec4(-0.17, 0.0, -0.92, 1.0), // saturn
+    vec4(1.11, 0.0, 0.4, 1.0), // uranus
+    vec4(-1.15, 0.0, -0.44, 1.0) // neptune
+  ];
   // Create each planet
   function initPlanets() { 
     sun = sphere(5);
@@ -338,8 +349,8 @@ window.onload = function init() {
     if (!gl) { alert( "WebGL 2.0 isn't available" ); }
 
     // look up the text canvas and make a 2D context for canvas
-    // var textCanvas = document.querySelector("#text");
-    //var ctx = textCanvas.getContext("2d");
+    var textCanvas = document.querySelector("#text");
+    ctx = textCanvas.getContext("2d");
 
     gl.viewport( 0, 0, canvas.width, canvas.height );
     gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
@@ -414,19 +425,18 @@ window.onload = function init() {
     document.getElementById("ButtonY").onclick = function(){axis = yAxis;};
     document.getElementById("ButtonZ").onclick = function(){axis = zAxis;};
     document.getElementById("ButtonT").onclick = function(){flag = !flag;};
+    document.getElementById("ButtonTLabels").onclick = function(){flagLabels = !flagLabels;};
     document.getElementById("ButtonSlow").onclick = function(){if(speed>0.2) speed -= 0.1};
     document.getElementById("ButtonFast").onclick = function(){if(speed<2.0) speed += 0.1};
     document.getElementById("ButtonScaleUp").onclick = function () {
         if(scaleFactor < 1.4) scaleFactor += 0.1; // Increase scale by 0.1
         initPlanets();
         initBuffers();
-        console.log(scaleFactor);
     };
     document.getElementById("ButtonScaleDown").onclick = function () {
         if (scaleFactor > 0.2) scaleFactor -= 0.1; // Decrease scale by 0.1
         initPlanets();
         initBuffers();
-        console.log(scaleFactor);
     };
 
 // uniforms for each program object
@@ -451,9 +461,83 @@ window.onload = function init() {
     render();
 }
 
+var defaultScreenX, defaultScreenY = 1024;
+function worldToScreenCoordinates(worldCoordinates) {
+    // Apply the model-view matrix to the world coordinates
+    var eyeCoordinates = mult(modelViewMatrix, worldCoordinates);
+
+    // Apply the projection matrix
+    var clipCoordinates = mult(projectionMatrix, eyeCoordinates);
+
+    // Check if the w component (clipCoordinates[3]) is zero
+    if (clipCoordinates[3] !== 0) {
+        // Perspective division (convert to normalized device coordinates)
+        var normalizedDeviceCoordinates = vec3(
+            clipCoordinates[0] / clipCoordinates[3],
+            clipCoordinates[1] / clipCoordinates[3],
+            clipCoordinates[2] / clipCoordinates[3]
+        );
+
+        // Convert to screen coordinates
+        var screenX = ((normalizedDeviceCoordinates[0] + 1) / 2) * canvas.width;
+        var screenY = ((1 - normalizedDeviceCoordinates[1]) / 2) * canvas.height;
+
+        return [screenX, screenY];
+    } else {
+        // Return a default value or handle the case as needed
+        return [defaultScreenX, defaultScreenY]; // For instance, a default position
+    }
+}
+
+// Function to draw name labels on 2D canvas
+function drawLabels(planetPos, i) {
+    // Save the current transformation matrix
+    ctx.save();
+
+    // Set the arrow position based on the initial position of Earth
+    var planetScreenPos = worldToScreenCoordinates(planetPos);
+
+    // Define an offset for the arrow from the Earth's position
+    var arrowOffsetX = 0; // Adjust as needed
+    var arrowOffsetY = 0; // Adjust as needed
+    // console.log(planetScreenPos[0]);
+    // console.log(planetScreenPos[1]);
+
+    // Calculate the arrow position on the 2D canvas
+    var arrowX = planetScreenPos[0] + arrowOffsetX; // Arrow X position on screen
+    var arrowY = planetScreenPos[1] + arrowOffsetY; // Arrow Y position on screen
+
+    // Translate to the arrow's position on the 2D canvas
+    ctx.translate(arrowX, arrowY);
+
+    // Draw an arrow (you may need to adjust the coordinates and styling)
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(5, 5);
+    ctx.lineTo(5, -5);
+    ctx.closePath();
+    ctx.fillStyle = "red";
+    ctx.fill();
+
+    // Draw the label for each planet
+    ctx.fillStyle = "white";
+    ctx.font = "12px Arial";
+    if (i === 0) ctx.fillText("Mercury", 15, 5);
+    if (i === 1) ctx.fillText("Venus", 15, 5);
+    if (i === 2) ctx.fillText("Earth", 15, 5);
+    if (i === 3) ctx.fillText("Mars", 15, 5);
+    if (i === 4) ctx.fillText("Jupiter", 15, 5);
+    if (i === 5) ctx.fillText("Saturn", 15, 5);
+    if (i === 6) ctx.fillText("Uranus", 15, 5);
+    if (i === 7) ctx.fillText("Neptune", 15, 5);
+
+    ctx.restore();
+}
+
 var render = function(){
 
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
 //update rotation angles and form modelView matrix
 
@@ -463,12 +547,15 @@ var render = function(){
     modelViewMatrix = mult(modelViewMatrix, rotate(theta[xAxis], vec3(1, 0, 0) ));
     modelViewMatrix = mult(modelViewMatrix, rotate(theta[yAxis], vec3(0, 1, 0) ));
     modelViewMatrix = mult(modelViewMatrix, rotate(theta[zAxis], vec3(0, 0, 1) ));
+    if (flagLabels) {
+        for (let i = 0; i < planetPositions.length; i++) {
+            drawLabels(planetPositions[i], i);
+        }
+    }
 
     // Apply scaling to the modelViewMatrix
     // Unused; don't want skybox to be affected
     // modelViewMatrix = mult(modelViewMatrix, scale(scaleFactor, scaleFactor, scaleFactor));
-
-// by commenting and uncommenting gl.drawArrays we can choose which shaders to use for each object
 
     gl.useProgram(program1);
     gl.uniformMatrix4fv( gl.getUniformLocation(program1,
