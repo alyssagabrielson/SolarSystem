@@ -1,14 +1,21 @@
 "use strict";
+
+/*
+    CS 435, Project #7, Alyssa Gabrielson, Our Solar System Interactive Program
+    3D models of 8 planets and the Sun
+    Uses 2D canvas to display labels accordingly with 3D world system
+    Textures mapped onto all, including sky box texture, view adjusted to be within
+    Uses sun as position for light source
+    Model transformations with user interaction
+*/
+
 // Sphere class
 function sphere(numSubdivisions) {
 
     var subdivisions = 3;
     if(numSubdivisions) subdivisions = numSubdivisions;
     
-    
     var data = {};
-    
-    //var radius = 0.5;
     
     var sphereVertexCoordinates = [];
     var sphereVertexCoordinatesNormals = [];
@@ -41,12 +48,7 @@ function sphere(numSubdivisions) {
          sphereTextureCoordinates.push([0.5*Math.acos(b[0])/Math.PI, 0.5*Math.asin(b[1]/Math.sqrt(1.0-b[0]*b[0]))/Math.PI]);
          sphereTextureCoordinates.push([0.5*Math.acos(c[0])/Math.PI, 0.5*Math.asin(c[1]/Math.sqrt(1.0-c[0]*c[0]))/Math.PI]);
     
-         //sphereTextureCoordinates.push([0.5+Math.asin(a[0])/Math.PI, 0.5+Math.asin(a[1])/Math.PI]);
-         //sphereTextureCoordinates.push([0.5+Math.asin(b[0])/Math.PI, 0.5+Math.asin(b[1])/Math.PI]);
-         //sphereTextureCoordinates.push([0.5+Math.asin(c[0])/Math.PI, 0.5+Math.asin(c[1])/Math.PI]);
-    
     }
-    
     
     
     function divideTriangle(a, b, c, count) {
@@ -70,7 +72,6 @@ function sphere(numSubdivisions) {
         }
     }
     
-    
     function tetrahedron(a, b, c, d, n) {
         divideTriangle(a, b, c, n);
         divideTriangle(d, c, b, n);
@@ -79,7 +80,6 @@ function sphere(numSubdivisions) {
     }
     
     tetrahedron(va, vb, vc, vd, subdivisions);
-    
     
     function translate(x, y, z){
        for(var i=0; i<sphereVertexCoordinates.length; i++) {
@@ -136,7 +136,6 @@ function sphere(numSubdivisions) {
                };
         };
     }
-    //for(var i =0; i<sphereVertexCoordinates.length; i++) console.log(sphereTextureCoordinates[i]);
     
     data.TriangleVertices = sphereVertexCoordinates;
     data.TriangleNormals = sphereNormals;
@@ -161,12 +160,12 @@ var xAxis = 0;
 var yAxis = 1;
 var zAxis = 2;
 var axis = 1; // start rotating on y axis first
-var theta = vec3(0, 0, 0);
+var theta =vec3(0, 0, 0);
 var speed = 0.25; // speed of rotation
 var scaleFactor = 1.0; // Initial scale factor
 
 var flag = true; // controls toggle of rotation
-var flagLabels = true;
+var flagLabels = true; // controls toggle of name labels
 
 var points = [];
 var normals = [];
@@ -223,9 +222,10 @@ function light() {
     return data;
   }
 
+  // Positions for planet labels
   const planetPositions =  [
-    vec4(-0.18, -0.0, 0.2, 1.0), // mercury's position
-    vec4(-0.289, 0.0, 0.53, 1.0), // venus's position
+    vec4(-0.18, -0.0, 0.2, 1.0), // Mercury's position
+    vec4(-0.289, 0.0, 0.53, 1.0), // Venus's position
     vec4(0.16, 0.0, 0.48, 1.0), // Earth's position
     vec4(-0.24, 0.0, -0.28, 1.0), // mars
     vec4(0.62, 0.0, -0.54, 1.0), // jupiter
@@ -233,6 +233,7 @@ function light() {
     vec4(1.11, 0.0, 0.4, 1.0), // uranus
     vec4(-1.15, 0.0, -0.44, 1.0) // neptune
   ];
+
   // Create each planet
   function initPlanets() { 
     sun = sphere(5);
@@ -359,12 +360,10 @@ window.onload = function init() {
     initPlanets();
 
 // light, material, texture
-
     var myMaterial = material();
     var myLight = light();
 
 // object sizes (number of vertices)
-
     nsun = sun.TriangleVertices.length;
     nmercury = mercury.TriangleVertices.length;
     nvenus = venus.TriangleVertices.length;
@@ -383,6 +382,7 @@ window.onload = function init() {
     program1 = initShaders( gl, "vertex-shader", "fragment-shader" );
     initBuffers();
 
+    // Load texture images
     var img1 = document.getElementById("Img1");
     suntex=configureTexture(img1);
     var img2 = document.getElementById("Img2");
@@ -407,19 +407,15 @@ window.onload = function init() {
     ringstex = configureTexture(img11);
 
 // set up projection matrix
-
     viewerPos = vec3(0.0, 0.0, -20.0 );
-
     projectionMatrix = ortho(-1.35, 1.35, -1.35, 1.35, -1.3, skyboxScale);
 
 // products of material and light properties
-
     var ambientProduct = mult(myLight.lightAmbient, myMaterial.materialAmbient);
     var diffuseProduct = mult(myLight.lightDiffuse, myMaterial.materialDiffuse);
     var specularProduct = mult(myLight.lightSpecular, myMaterial.materialSpecular);
 
 // listeners
-
     document.getElementById("ButtonX").onclick = function(){axis = xAxis;};
     document.getElementById("ButtonY").onclick = function(){axis = yAxis;};
     document.getElementById("ButtonZ").onclick = function(){axis = zAxis;};
@@ -439,7 +435,6 @@ window.onload = function init() {
     };
 
 // uniforms for each program object
-
     gl.useProgram(program1);
 
     gl.uniform4fv(gl.getUniformLocation(program1, "ambientProduct"),
@@ -464,11 +459,10 @@ var defaultScreenX, defaultScreenY = 1024;
 function worldToScreenCoordinates(worldCoordinates) {
     // Apply the model-view matrix to the world coordinates
     var eyeCoordinates = mult(modelViewMatrix, worldCoordinates);
-
     // Apply the projection matrix
     var clipCoordinates = mult(projectionMatrix, eyeCoordinates);
 
-    // Check if the w component (clipCoordinates[3]) is zero
+    // Check if (clipCoordinates[3]) is zero
     if (clipCoordinates[3] !== 0) {
         // Perspective division (convert to normalized device coordinates)
         var normalizedDeviceCoordinates = vec3(
@@ -483,8 +477,8 @@ function worldToScreenCoordinates(worldCoordinates) {
 
         return [screenX, screenY];
     } else {
-        // Return a default value or handle the case as needed
-        return [defaultScreenX, defaultScreenY]; // For instance, a default position
+        // Return a default value incase divide by 0 happens
+        return [defaultScreenX, defaultScreenY];
     }
 }
 
@@ -502,14 +496,14 @@ function drawLabels(planetPos, i) {
     // console.log(planetScreenPos[0]);
     // console.log(planetScreenPos[1]);
 
-    // Calculate the arrow position on the 2D canvas
-    var arrowX = planetScreenPos[0] + arrowOffsetX; // Arrow X position on screen
-    var arrowY = planetScreenPos[1] + arrowOffsetY; // Arrow Y position on screen
+    // Calculate the arrow position on 2D canvas
+    var arrowX = planetScreenPos[0] + arrowOffsetX;
+    var arrowY = planetScreenPos[1] + arrowOffsetY;
 
-    // Translate to the arrow's position on the 2D canvas
+    // Translate to the arrow's position on 2D canvas
     ctx.translate(arrowX, arrowY);
 
-    // Draw an arrow (you may need to adjust the coordinates and styling)
+    // Draw an arrow
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(5, 5);
@@ -560,6 +554,7 @@ var render = function(){
     gl.uniformMatrix4fv( gl.getUniformLocation(program1,
             "modelViewMatrix"), false, flatten(modelViewMatrix) );
 
+    // Draw all planets with respective texture
     gl.bindTexture(gl.TEXTURE_2D, suntex)
     gl.drawArrays( gl.TRIANGLES, 0, nsun);
     gl.bindTexture(gl.TEXTURE_2D, mercurytex);
