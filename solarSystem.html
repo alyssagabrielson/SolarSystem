@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+#version 300 es
+
+// per vertex lighting
+
+in vec4 aPosition;
+in vec3 aNormal;
+in vec2 aTexCoord;
+out vec4 vColor;
+out vec2 vTexCoord;
+
+uniform vec3 theta;
+
+uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform vec4 lightPosition;
+uniform float shininess;
+
+void main()
+{
+
+
+      vec3 pos = (modelViewMatrix * aPosition).xyz;
+
+      //fixed light postion
+
+      vec3 light = lightPosition.xyz;
+      vec3 L = normalize( light - pos );
+
+
+      vec3 E = normalize( pos );
+      vec3 H = normalize( L + E );
+
+      vec4 NN = vec4(aNormal,0);
+
+      // Transform vertex normal into eye coordinates
+
+      vec3 N = normalize( (modelViewMatrix*NN).xyz);
+
+      // Compute terms in the illumination equation
+      vec4 ambient = ambientProduct;
+
+      float Kd = max( dot(L, N), 0.0 );
+      vec4  diffuse = Kd*diffuseProduct;
+
+      float Ks = pow( max(dot(N, H), 0.0), shininess );
+      vec4  specular = Ks * specularProduct;
+
+      if( dot(L, N) < 0.0 ) {
+  	      specular = vec4(0.0, 0.0, 0.0, 1.0);
+      }
+
+      gl_Position = projectionMatrix * modelViewMatrix * aPosition;
+
+      vColor = ambient + diffuse +specular;
+      vColor.a = 1.0;
+      vTexCoord = aTexCoord;
+  }
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+#version 300 es
+
+// pass through fragment shader
+
+precision mediump float;
+
+in vec4 vColor;
+in vec2 vTexCoord;
+out vec4 fColor;
+
+uniform sampler2D textureMap;
+
+void
+main()
+{
+    // fColor = vColor;
+    fColor = texture( textureMap, vTexCoord );
+}
+</script>
+
+<script id="vertex-shader2" type="x-shader/x-vertex">
+#version 300 es
+
+// vertex color attribute shader
+in vec4 aPosition;
+in vec4 aColor;
+out vec4 vColor;
+
+uniform vec3 theta;
+
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+
+void main()
+{
+
+
+      gl_Position = projectionMatrix * modelViewMatrix * aPosition;
+      vColor = aColor;
+
+  }
+</script>
+
+<script id="fragment-shader2" type="x-shader/x-fragment">
+#version 300 es
+
+// pass through fragment shader
+
+precision mediump float;
+
+in vec4 vColor;
+out vec4 fColor;
+
+void
+main()
+{
+    fColor = vColor;
+}
+</script>
+
+<script id="vertex-shader3" type="x-shader/x-vertex">
+#version 300 es
+
+// color + texture shader
+
+in vec4 aPosition;
+in vec4 aColor;
+in vec2 aTexCoord;
+
+out vec4 vColor;
+out vec2 vTexCoord;
+
+uniform vec3 theta;
+
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+
+void main()
+{
+
+
+      gl_Position = projectionMatrix * modelViewMatrix * aPosition;
+      vColor = aColor;
+      vTexCoord = aTexCoord;
+
+  }
+</script>
+
+<script id="fragment-shader3" type="x-shader/x-fragment">
+#version 300 es
+// color*texture fragment shader
+
+precision mediump float;
+
+in vec4 vColor;
+in vec2 vTexCoord;
+out vec4 fColor;
+
+uniform sampler2D textureMap;
+
+void
+main()
+{
+
+    // fColor = vColor*texture( textureMap, vTexCoord );
+    fColor = texture( textureMap, vTexCoord );
+
+}
+</script>
+
+<script type="text/javascript" src="../Common/initShaders.js"></script>
+<script type="text/javascript" src="../Common/MVnew.js"></script>
+<script type="text/javascript" src="geometry.js"></script>
+<script type="text/javascript" src="solarSystem.js"></script>
+
+<body>
+<canvas id="gl-canvas" width="1024" height="1024">
+Oops ... your browser doesn't support the HTML5 canvas element
+</canvas>
+
+<br/>
+
+<button id= "ButtonX">Rotate X</button>
+<button id= "ButtonY">Rotate Y</button>
+<button id= "ButtonZ">Rotate Z</button>
+<button id = "ButtonT">Toggle Solar System Rotation</button>
+
+<div style="margin-top: 20px;">
+<button id = "ButtonSlow">Slow Down Orbit</button>
+<button id = "ButtonFast">Speed Up Orbit</button>
+</div>
+
+<img id = "Img1" src = "sun.jpg" hidden />
+<img id = "Img2" src = "mercury.jpg" hidden />
+<img id = "Img3" src = "venus.jpg" hidden />
+<img id = "Img4" src = "earth.jpg" hidden />
+<img id = "Img5" src = "mars.jpg" hidden />
+<img id = "Img6" src = "jupiter.jpg" hidden />
+<img id = "Img7" src = "saturn.jpg" hidden />
+<img id = "Img8" src = "uranus.jpg" hidden />
+<img id = "Img9" src = "neptune.jpg" hidden />
+<img id = "Img10" src = "2k_stars.jpg" hidden />
+<img id = "Img11" src = "saturnRing.png" hidden />
+</body>
+</html>
